@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getProfile, logout } from '../services/api/auth'
+import Upload from '../pages/Upload'
 
 function Dashboard() {
   const [user, setUser] = useState(null)
@@ -203,11 +204,7 @@ function Dashboard() {
             </div>
           )}
 
-          {activeTab === 'upload' && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <p className="text-gray-600">Upload functionality coming soon...</p>
-            </div>
-          )}
+          {activeTab === 'upload' && <Upload />}
 
           {activeTab === 'library' && (
             <div className="bg-white rounded-lg shadow p-6">
