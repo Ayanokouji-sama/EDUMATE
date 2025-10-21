@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { register } from '../services/api/auth'
 
 function Signup() {
   const [name, setName] = useState('')
@@ -7,9 +8,10 @@ function Signup() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
 
@@ -28,11 +30,28 @@ function Signup() {
       return
     }
 
-    // TODO: Add actual signup API call later
-    console.log('Signup attempt:', name, email, password)
-    
-    // For now just navigate to login
-    navigate('/login')
+    setLoading(true)
+
+    try {
+      await register(name, email, password)
+      alert('Account created successfully! Please login.')
+      navigate('/login')
+    } catch (err) {
+      if (err.response && err.response.data) {
+        const errors = err.response.data
+        if (errors.username) {
+          setError('This email is already registered')
+        } else if (errors.email) {
+          setError('Invalid email address')
+        } else {
+          setError('Registration failed. Please try again.')
+        }
+      } else {
+        setError('Something went wrong. Please try again.')
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -60,6 +79,7 @@ function Signup() {
               onChange={(e) => setName(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="John Doe"
+              disabled={loading}
             />
           </div>
 
@@ -73,6 +93,7 @@ function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="your@email.com"
+              disabled={loading}
             />
           </div>
 
@@ -86,6 +107,7 @@ function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="At least 6 characters"
+              disabled={loading}
             />
           </div>
 
@@ -99,14 +121,16 @@ function Signup() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="Re-enter password"
+              disabled={loading}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 mb-4"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 mb-4 disabled:bg-gray-400"
           >
-            Sign Up
+            {loading ? 'Creating account...' : 'Sign Up'}
           </button>
 
           <div className="text-center text-gray-600">
