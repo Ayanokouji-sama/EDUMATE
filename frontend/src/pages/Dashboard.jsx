@@ -35,7 +35,7 @@ function Dashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
+
       <div className="w-64 bg-white shadow-lg">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-blue-600">Edumate</h1>
@@ -47,8 +47,7 @@ function Dashboard() {
             onClick={() => setActiveTab('home')}
             className={`w-full text-left px-6 py-3 flex items-center gap-3 ${
               activeTab === 'home' ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
+            }`}>
             <span className="text-xl">🏠</span>
             <span className="font-medium">Home</span>
           </button>
@@ -57,8 +56,7 @@ function Dashboard() {
             onClick={() => setActiveTab('upload')}
             className={`w-full text-left px-6 py-3 flex items-center gap-3 ${
               activeTab === 'upload' ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
+            }`}>
             <span className="text-xl">📤</span>
             <span className="font-medium">Upload Content</span>
           </button>
@@ -67,8 +65,7 @@ function Dashboard() {
             onClick={() => setActiveTab('library')}
             className={`w-full text-left px-6 py-3 flex items-center gap-3 ${
               activeTab === 'library' ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
+            }`}>
             <span className="text-xl">📚</span>
             <span className="font-medium">My Library</span>
           </button>
@@ -77,8 +74,7 @@ function Dashboard() {
             onClick={() => setActiveTab('tools')}
             className={`w-full text-left px-6 py-3 flex items-center gap-3 ${
               activeTab === 'tools' ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
+            }`}>
             <span className="text-xl">🛠️</span>
             <span className="font-medium">AI Tools</span>
           </button>
@@ -87,8 +83,7 @@ function Dashboard() {
             onClick={() => setActiveTab('settings')}
             className={`w-full text-left px-6 py-3 flex items-center gap-3 ${
               activeTab === 'settings' ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
+            }`}>
             <span className="text-xl">⚙️</span>
             <span className="font-medium">Settings</span>
           </button>
@@ -106,16 +101,13 @@ function Dashboard() {
           </div>
           <button
             onClick={handleLogout}
-            className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          >
+            className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
             Logout
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        {/* Header */}
         <div className="bg-white shadow-sm p-6">
           <h2 className="text-2xl font-bold text-gray-800">
             {activeTab === 'home' && 'Dashboard'}
@@ -133,11 +125,9 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Content Area */}
         <div className="p-6">
           {activeTab === 'home' && (
             <div>
-              {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white rounded-lg shadow p-6">
                   <div className="flex items-center justify-between">
@@ -180,7 +170,6 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* Recent Activity */}
               <div className="bg-white rounded-lg shadow p-6 mb-6">
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Activity</h3>
                 <div className="text-center py-12 text-gray-500">
@@ -190,14 +179,12 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* Quick Actions */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h3 className="text-lg font-bold text-gray-800 mb-4">Quick Actions</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     onClick={() => setActiveTab('upload')}
-                    className="border-2 border-blue-600 text-blue-600 px-6 py-4 rounded-lg hover:bg-blue-50 flex items-center gap-3"
-                  >
+                    className="border-2 border-blue-600 text-blue-600 px-6 py-4 rounded-lg hover:bg-blue-50 flex items-center gap-3">
                     <span className="text-2xl">📤</span>
                     <span className="font-medium">Upload Content</span>
                   </button>
@@ -285,8 +272,7 @@ function Dashboard() {
                       type="text"
                       value={user.first_name || user.username}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      readOnly
-                    />
+                      readOnly/>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -294,8 +280,7 @@ function Dashboard() {
                       type="email"
                       value={user.email}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      readOnly
-                    />
+                      readOnly/>
                   </div>
                 </div>
               </div>
