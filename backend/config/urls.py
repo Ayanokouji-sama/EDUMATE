@@ -11,10 +11,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/auth/', include('authentication.urls')),
     path('api/content/', include('content.urls')),
     path('api/progress/', include('progress.urls')),
     path('api/models/', include('models_distribution.urls')),
+    
 ]
 
 if settings.DEBUG:
