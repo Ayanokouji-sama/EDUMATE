@@ -1,159 +1,180 @@
-import { useState } from 'react';
-import Upload from '../pages/Upload';
+import { useState, useEffect } from 'react';
+import { Link, Routes, Route, useLocation } from 'react-router-dom';
+import Upload from './Upload';
+import Library from './Library';
+import Settings from './Settings';
+import { getAllContent } from '../services/api/indexedDB';
 
 function Dashboard() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('home');
+  const [stats, setStats] = useState({
+    total: 0,
+    summaries: 0,
+    questions: 0,
+    proofread: 0,
+    simplified: 0
+  });
+  const [recentActivity, setRecentActivity] = useState([]);
 
-  const renderTabHeader = () => {
-    switch (activeTab) {
-      case 'home':
-        return "Welcome back! Here's your learning overview";
-      case 'upload':
-        return "Upload text, images, or audio to start learning";
-      case 'library':
-        return "All your study materials in one place";
-      case 'tools':
-        return "AI-powered learning tools";
-      case 'settings':
-        return "App preferences";
-      default:
-        return "Welcome!";
+  useEffect(() => {
+    const path = location.pathname.split('/')[2] || 'home';
+    setActiveTab(path);
+    
+    if (path === 'home' || path === '') {
+      loadStats();
+    }
+  }, [location]);
+
+  const loadStats = async () => {
+    try {
+      const allContent = await getAllContent();
+      
+      setStats({
+        total: allContent.length,
+        summaries: allContent.filter(i => i.type === 'summarize').length,
+        questions: allContent.filter(i => i.type === 'questions').length,
+        proofread: allContent.filter(i => i.type === 'proofread').length,
+        simplified: allContent.filter(i => i.type === 'simplify').length
+      });
+
+      const recent = allContent
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 5);
+      setRecentActivity(recent);
+    } catch (error) {
+      console.error('Error loading stats:', error);
     }
   };
 
+  const renderTabHeader = () => {
+    const headers = {
+      home: 'Welcome back! Here\'s your learning overview',
+      upload: 'Upload text, images, or audio to start learning',
+      library: 'All your study materials in one place',
+      settings: 'App preferences'
+    };
+    return headers[activeTab] || 'Dashboard';
+  };
+
+  const getIcon = (type) => {
+    const icons = {
+      summarize: '📝',
+      simplify: '✨',
+      proofread: '✅',
+      questions: '❓'
+    };
+    return icons[type] || '📄';
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <aside className="w-64 bg-white shadow flex flex-col">
-        <div className="p-6 border-b">
-          <span className="font-bold text-xl text-indigo-600">Edumate</span>
-          <div className="text-sm text-gray-400 mt-1">AI Learning Companion</div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-indigo-600">Edumate</h1>
+          <p className="text-sm text-gray-600">AI Learning Companion</p>
         </div>
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          <button
-            className={`block w-full text-left py-2 px-3 rounded transition ${activeTab === 'home' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
-            onClick={() => setActiveTab('home')}
+
+        <nav className="mt-6">
+          <Link
+            to="/dashboard"
+            className={`flex items-center px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 ${
+              activeTab === 'home' ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600' : ''
+            }`}
           >
-            Home
-          </button>
-          <button
-            className={`block w-full text-left py-2 px-3 rounded transition ${activeTab === 'upload' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
-            onClick={() => setActiveTab('upload')}
+            🏠 Home
+          </Link>
+
+          <Link
+            to="/dashboard/upload"
+            className={`flex items-center px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 ${
+              activeTab === 'upload' ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600' : ''
+            }`}
           >
-            Upload Content
-          </button>
-          <button
-            className={`block w-full text-left py-2 px-3 rounded transition ${activeTab === 'library' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
-            onClick={() => setActiveTab('library')}
+            📤 Upload Content
+          </Link>
+
+          <Link
+            to="/dashboard/library"
+            className={`flex items-center px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 ${
+              activeTab === 'library' ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600' : ''
+            }`}
           >
-            My Library
-          </button>
-          <button
-            className={`block w-full text-left py-2 px-3 rounded transition ${activeTab === 'tools' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
-            onClick={() => setActiveTab('tools')}
+            📚 My Library
+          </Link>
+
+          <Link
+            to="/dashboard/settings"
+            className={`flex items-center px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 ${
+              activeTab === 'settings' ? 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600' : ''
+            }`}
           >
-            AI Tools
-          </button>
-          <button
-            className={`block w-full text-left py-2 px-3 rounded transition ${activeTab === 'settings' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100'}`}
-            onClick={() => setActiveTab('settings')}
-          >
-            Settings
-          </button>
+            ⚙️ Settings
+          </Link>
         </nav>
-        {/* Remove user info and logout */}
-      </aside>
-
-      <main className="flex-1 p-10">
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-indigo-700">{renderTabHeader()}</h2>
-        </div>
-
-        {activeTab === 'home' && (
-          <section>
-            <div className="flex flex-row gap-8 mb-8">
-              <div className="flex-1 bg-white shadow rounded-lg p-6 flex flex-col items-center">
-                <div className="text-gray-500 mb-2">Total Content</div>
-                <div className="font-bold text-3xl text-indigo-600">0</div>
-              </div>
-              <div className="flex-1 bg-white shadow rounded-lg p-6 flex flex-col items-center">
-                <div className="text-gray-500 mb-2">Summaries</div>
-                <div className="font-bold text-3xl text-indigo-600">0</div>
-              </div>
-              <div className="flex-1 bg-white shadow rounded-lg p-6 flex flex-col items-center">
-                <div className="text-gray-500 mb-2">Questions</div>
-                <div className="font-bold text-3xl text-indigo-600">0</div>
-              </div>
-              <div className="flex-1 bg-white shadow rounded-lg p-6 flex flex-col items-center">
-                <div className="text-gray-500 mb-2">Translations</div>
-                <div className="font-bold text-3xl text-indigo-600">0</div>
-              </div>
-            </div>
-            <div className="bg-white shadow rounded-lg p-8 text-gray-600 text-center">
-              <div className="mb-2 font-medium">Recent Activity</div>
-              <div className="text-sm text-gray-400">
-                No recent activity yet <br /> Upload some content to get started!
-              </div>
-            </div>
-          </section>
-        )}
-
-        {activeTab === 'upload' && (
-          <section>
-            <Upload />
-          </section>
-        )}
-
-        {activeTab === 'library' && (
-          <section>
-            <div className="bg-white shadow rounded-lg p-8 text-center text-gray-600">
-              <div className="mb-4 font-semibold text-lg">Your library is empty</div>
-              <div className="text-sm text-gray-400">Start uploading content to build your library</div>
-            </div>
-          </section>
-        )}
-
-        {activeTab === 'tools' && (
-          <section>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="bg-white shadow rounded-lg p-8">
-                <div className="font-semibold mb-2">Summarize</div>
-                <div className="text-sm text-gray-500">
-                  Generate concise summaries from any text
+      </div>
+      <div className="ml-64 p-8">
+        <h1 className="text-3xl font-bold text-indigo-600 mb-8">{renderTabHeader()}</h1>
+        <Routes>
+          <Route path="/" element={
+            <div className="space-y-6">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="text-gray-600 text-sm mb-1">Total Content</div>
+                  <div className="text-3xl font-bold text-gray-800">{stats.total}</div>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="text-gray-600 text-sm mb-1">Summaries</div>
+                  <div className="text-3xl font-bold text-blue-600">{stats.summaries}</div>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="text-gray-600 text-sm mb-1">Questions</div>
+                  <div className="text-3xl font-bold text-orange-600">{stats.questions}</div>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="text-gray-600 text-sm mb-1">Proofread</div>
+                  <div className="text-3xl font-bold text-green-600">{stats.proofread}</div>
                 </div>
               </div>
-              <div className="bg-white shadow rounded-lg p-8">
-                <div className="font-semibold mb-2">Translate</div>
-                <div className="text-sm text-gray-500">
-                  Translate content to multiple languages
-                </div>
-              </div>
-              <div className="bg-white shadow rounded-lg p-8">
-                <div className="font-semibold mb-2">Generate Questions</div>
-                <div className="text-sm text-gray-500">
-                  Create practice questions from your content
-                </div>
-              </div>
-              <div className="bg-white shadow rounded-lg p-8">
-                <div className="font-semibold mb-2">Proofread</div>
-                <div className="text-sm text-gray-500">
-                  Check grammar and improve your writing
-                </div>
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Activity</h2>
+                {recentActivity.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No recent activity yet</p>
+                    <p className="text-sm mt-2">Upload some content to get started!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentActivity.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded hover:bg-gray-100"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{getIcon(item.type)}</span>
+                          <div>
+                            <div className="font-medium text-gray-800">
+                              {item.title || 'Untitled'}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {item.type} • {new Date(item.timestamp).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          </section>
-        )}
-
-        {activeTab === 'settings' && (
-          <section>
-            <div className="bg-white shadow rounded-lg p-8">
-              <div className="font-semibold mb-2">Settings</div>
-              <div className="text-sm text-gray-500">
-                App preferences and offline data options will go here.
-              </div>
-            </div>
-          </section>
-        )}
-      </main>
+          } />
+          <Route path="/upload" element={<Upload />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </div>
     </div>
   );
 }

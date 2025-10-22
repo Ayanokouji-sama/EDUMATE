@@ -1,9 +1,4 @@
 const simulateDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// ============================================================================
-// AI AVAILABILITY CHECKING
-// ============================================================================
-
 export const checkAIAvailability = async () => {
   console.log('🔍 AI System Ready');
 
@@ -19,10 +14,6 @@ export const checkAIAvailability = async () => {
   console.log('✅ All AI features available');
   return availability;
 };
-
-// ============================================================================
-// SMART SUMMARIZER
-// ============================================================================
 
 export const summarizeText = async (text, options = {}, onProgress = null) => {
   try {
@@ -42,11 +33,8 @@ export const summarizeText = async (text, options = {}, onProgress = null) => {
     const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
     const words = text.split(/\s+/);
     const wordCount = words.length;
-    
-    // Create intelligent summary based on text
     let summary = `**Summary**\n\n`;
-    
-    // Add first sentence as main topic
+  
     if (sentences.length > 0) {
       summary += `${sentences[0].trim()}.\n\n`;
     }
@@ -77,10 +65,6 @@ export const summarizeText = async (text, options = {}, onProgress = null) => {
   }
 };
 
-// ============================================================================
-// QUESTION GENERATOR
-// ============================================================================
-
 export const generateQuestions = async (text, options = {}, onProgress = null) => {
   try {
     if (onProgress) {
@@ -95,7 +79,6 @@ export const generateQuestions = async (text, options = {}, onProgress = null) =
 
     await simulateDelay(1500);
 
-    // Extract topic from first sentence
     const firstSentence = text.split(/[.!?]+/)[0] || "this topic";
     const words = text.split(/\s+/);
     const keyTerms = words.filter(w => w.length > 6).slice(0, 5);
@@ -152,10 +135,6 @@ export const generateQuestions = async (text, options = {}, onProgress = null) =
   }
 };
 
-// ============================================================================
-// TEXT SIMPLIFIER
-// ============================================================================
-
 export const rewriteText = async (text, options = {}, onProgress = null) => {
   try {
     if (onProgress) {
@@ -170,13 +149,11 @@ export const rewriteText = async (text, options = {}, onProgress = null) => {
 
     await simulateDelay(1100);
 
-    // Simplify the text
     const sentences = text.split(/[.!?]+/).filter(s => s.trim());
     
     let simplified = `**Simplified Version**\n\n`;
     
     sentences.slice(0, Math.min(5, sentences.length)).forEach((sentence, idx) => {
-      // Remove complex words and phrases
       let simple = sentence
         .replace(/\b(furthermore|moreover|consequently|nevertheless)\b/gi, 'Also')
         .replace(/\b(utilize|utilization)\b/gi, 'use')
@@ -204,10 +181,6 @@ export const rewriteText = async (text, options = {}, onProgress = null) => {
   }
 };
 
-// ============================================================================
-// PROOFREADER
-// ============================================================================
-
 export const proofreadText = async (text, options = {}, onProgress = null) => {
   try {
     if (onProgress) {
@@ -222,11 +195,9 @@ export const proofreadText = async (text, options = {}, onProgress = null) => {
 
     await simulateDelay(1300);
 
-    // Check for common issues
     const issues = [];
     const sentences = text.split(/[.!?]+/).filter(s => s.trim());
-    
-    // Check for basic grammar patterns
+
     if (text.match(/\b(alot|cant|wont|dont)\b/i)) {
       issues.push("⚠️ Found spacing issues in contractions");
     }
@@ -285,10 +256,6 @@ export const proofreadText = async (text, options = {}, onProgress = null) => {
   }
 };
 
-// ============================================================================
-// TRANSLATOR (Bonus feature)
-// ============================================================================
-
 export const translateText = async (text, targetLanguage = 'es', sourceLanguage = 'en', onProgress = null) => {
   try {
     if (onProgress) {
@@ -328,10 +295,6 @@ export const translateText = async (text, targetLanguage = 'es', sourceLanguage 
     throw error;
   }
 };
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
 
 export default {
   checkAIAvailability,

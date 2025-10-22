@@ -55,8 +55,6 @@ function Upload() {
 
     try {
       let contentToProcess = text
-
-      // Handle file uploads
       if (file) {
         setProgress({ status: 'reading', message: 'Reading file...' })
 
@@ -96,13 +94,9 @@ function Upload() {
       }
 
       let processedResult = null
-
-      // Progress callback to track AI processing
       const onProgress = (progressInfo) => {
         setProgress(progressInfo)
       }
-
-      // Process based on selected tool
       if (selectedTool === 'summarize') {
         processedResult = await summarizeText(
           contentToProcess, 
@@ -124,14 +118,13 @@ function Upload() {
         processedResult = await generateQuestions(contentToProcess, 5, onProgress)
       }
 
-      // Save to IndexedDB
       await saveContent({
-        type: file ? file.type : 'text/plain',
-        filename: file ? file.name : 'Direct text input',
-        content: contentToProcess,
-        processedResult: processedResult,
-        tool: selectedTool,
-        timestamp: new Date().toISOString()
+        title: file ? file.name : 'Direct text input',
+        type: selectedTool,  
+        result: processedResult,  
+        originalText: contentToProcess,  
+        fileType: file ? file.type : 'text/plain',
+        timestamp: Date.now()
       })
 
       setResult({
@@ -176,8 +169,6 @@ function Upload() {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Upload Content</h1>
-
-        {/* AI Availability Check */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">
           <button
             onClick={checkAvailability}
@@ -200,26 +191,19 @@ function Upload() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Upload Section */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Upload or Paste Content</h2>
-
-              {/* Error Message */}
               {error && (
                 <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
                   {error}
                 </div>
               )}
-
-              {/* Success Message */}
               {success && (
                 <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
                   {success}
                 </div>
               )}
-
-              {/* Progress Indicator */}
               {loading && progress.status !== 'idle' && (
                 <div className="bg-blue-50 border border-blue-300 text-blue-700 px-4 py-3 rounded mb-4">
                   <div className="flex items-center">
@@ -228,8 +212,6 @@ function Upload() {
                   </div>
                 </div>
               )}
-
-              {/* Drag & Drop Area */}
               <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -255,8 +237,6 @@ function Upload() {
                   </div>
                 )}
               </div>
-
-              {/* Text Input */}
               <div className="mb-6">
                 <label className="block text-gray-700 font-bold mb-2">
                   Or paste text directly:
@@ -273,8 +253,6 @@ function Upload() {
                   disabled={loading}
                 />
               </div>
-
-              {/* Tool Selection */}
               <div className="mb-6">
                 <label className="block text-gray-700 font-bold mb-3">Select AI Tool:</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -300,8 +278,6 @@ function Upload() {
                   ))}
                 </div>
               </div>
-
-              {/* Process Button */}
               <button
                 onClick={handleUpload}
                 disabled={loading}
@@ -312,7 +288,6 @@ function Upload() {
             </div>
           </div>
 
-          {/* Results Section */}
           <div>
             <div className="bg-white rounded-lg shadow p-6 sticky top-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Results</h2>
