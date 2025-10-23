@@ -86,7 +86,6 @@ html.dark .border-blue-200 {
   border-color: rgb(30, 58, 138);
 }
 
-/* ===== BUTTONS & HOVER STATES ===== */
 html.dark .hover\:bg-gray-300:hover {
   background-color: rgb(75, 85, 99) !important;
 }

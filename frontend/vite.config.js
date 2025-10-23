@@ -38,7 +38,7 @@ export default defineConfig({
               cacheName: 'ai-models-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                maxAgeSeconds: 60 * 60 * 24 * 30 
               }
             }
           }
