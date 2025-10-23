@@ -1,306 +1,335 @@
-const simulateDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+// Chrome Built-in AI APIs - Official Implementation for Google Chrome AI Challenge 2025
+// Based on Chrome Developer Documentation and Google I/O 2025
+
+// ============================================
+// 1. CHECK AI AVAILABILITY
+// ============================================
 export const checkAIAvailability = async () => {
-  console.log('🔍 AI System Ready');
-
-  const availability = {
-    apiVersion: 'ready',
-    summarizer: 'readily',
-    translator: 'readily',
-    writer: 'readily',
-    rewriter: 'readily',
-    languageModel: 'readily'
-  };
-
-  console.log('✅ All AI features available');
+  console.log('🔍 Checking Chrome Built-in AI System');
+  
+  const availability = {};
+  
+  // Check Language Model (Prompt API)
+  if ('ai' in self && 'languageModel' in self.ai) {
+    availability.languageModel = await self.ai.languageModel.availability();
+  } else {
+    availability.languageModel = 'unavailable';
+  }
+  
+  // Check Summarizer API
+  if ('ai' in self && 'summarizer' in self.ai) {
+    availability.summarizer = await self.ai.summarizer.availability();
+  } else {
+    availability.summarizer = 'unavailable';
+  }
+  
+  // Check Writer API
+  if ('ai' in self && 'writer' in self.ai) {
+    availability.writer = await self.ai.writer.availability();
+  } else {
+    availability.writer = 'unavailable';
+  }
+  
+  // Check Rewriter API
+  if ('ai' in self && 'rewriter' in self.ai) {
+    availability.rewriter = await self.ai.rewriter.availability();
+  } else {
+    availability.rewriter = 'unavailable';
+  }
+  
+  // Check Translator API
+  if ('ai' in self && 'translator' in self.ai) {
+    availability.translator = await self.ai.translator.availability();
+  } else {
+    availability.translator = 'unavailable';
+  }
+  
+  // Check Language Detector API
+  if ('ai' in self && 'languageDetector' in self.ai) {
+    availability.languageDetector = await self.ai.languageDetector.availability();
+  } else {
+    availability.languageDetector = 'unavailable';
+  }
+  
+  console.log('✅ AI Availability:', availability);
   return availability;
 };
 
+// ============================================
+// 2. SUMMARIZER API
+// ============================================
 export const summarizeText = async (text, options = {}, onProgress = null) => {
   try {
+    if (!('ai' in self) || !('summarizer' in self.ai)) {
+      throw new Error('Summarizer API not available in this browser');
+    }
+
+    const availability = await self.ai.summarizer.availability();
+    if (availability === 'unavailable') {
+      throw new Error('Summarizer is not available on this device');
+    }
+
     if (onProgress) {
-      onProgress({ status: "info", message: "Analyzing content..." });
+      onProgress({ status: 'info', message: 'Initializing summarizer...' });
     }
 
-    await simulateDelay(800);
-
-    if (onProgress) {
-      onProgress({ status: "info", message: "Generating summary..." });
-    }
-
-    await simulateDelay(1200);
-
-    // Extract actual key information from the text
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 20);
-    const words = text.split(/\s+/);
-    const wordCount = words.length;
-    let summary = `**Summary**\n\n`;
-  
-    if (sentences.length > 0) {
-      summary += `${sentences[0].trim()}.\n\n`;
-    }
-    
-    // Add key points
-    summary += `**Key Points:**\n\n`;
-    const keyPoints = Math.min(4, sentences.length - 1);
-    for (let i = 1; i <= keyPoints; i++) {
-      if (sentences[i]) {
-        summary += `• ${sentences[i].trim()}\n`;
+    // Create summarizer with options
+    const summarizer = await self.ai.summarizer.create({
+      type: options.type || 'key-points', // 'key-points', 'tl;dr', 'teaser', 'headline'
+      format: 'markdown',
+      length: options.length || 'medium', // 'short', 'medium', 'long'
+      sharedContext: options.context || '',
+      monitor(m) {
+        m.addEventListener('downloadprogress', (e) => {
+          if (onProgress) {
+            onProgress({
+              status: 'info',
+              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
+            });
+          }
+        });
       }
-    }
-    
-    summary += `\n**Word Count:** ${wordCount} words`;
+    });
 
     if (onProgress) {
-      onProgress({ status: "success", message: "✅ Summary generated!" });
+      onProgress({ status: 'info', message: 'Generating summary...' });
     }
+
+    // Generate summary
+    const summary = await summarizer.summarize(text, {
+      context: options.context || ''
+    });
+
+    // Cleanup
+    summarizer.destroy();
 
     return summary;
-
   } catch (error) {
-    console.error('❌ Summarization error:', error);
-    if (onProgress) {
-      onProgress({ status: "error", message: error.message });
-    }
-    throw error;
+    console.error('Summarizer error:', error);
+    throw new Error(`Summarization failed: ${error.message}`);
   }
 };
 
+// ============================================
+// 3. WRITER API (for generating questions)
+// ============================================
 export const generateQuestions = async (text, options = {}, onProgress = null) => {
   try {
-    if (onProgress) {
-      onProgress({ status: "info", message: "Analyzing content structure..." });
+    if (!('ai' in self) || !('writer' in self.ai)) {
+      throw new Error('Writer API not available in this browser');
     }
 
-    await simulateDelay(1000);
-
-    if (onProgress) {
-      onProgress({ status: "info", message: "Generating practice questions..." });
+    const availability = await self.ai.writer.availability();
+    if (availability === 'unavailable') {
+      throw new Error('Writer is not available on this device');
     }
 
-    await simulateDelay(1500);
+    if (onProgress) {
+      onProgress({ status: 'info', message: 'Initializing writer...' });
+    }
 
-    const firstSentence = text.split(/[.!?]+/)[0] || "this topic";
-    const words = text.split(/\s+/);
-    const keyTerms = words.filter(w => w.length > 6).slice(0, 5);
-
-    const questions = `**Practice Questions**
-
-**Multiple Choice Questions:**
-
-1. What is the main concept discussed in this content?
-   a) ${keyTerms[0] || "Concept A"}
-   b) ${keyTerms[1] || "Concept B"}
-   c) ${keyTerms[2] || "Concept C"}
-   d) ${keyTerms[3] || "Concept D"}
-
-2. According to the text, which statement is most accurate?
-   a) The primary focus is on theoretical concepts
-   b) The content emphasizes practical applications
-   c) Both theory and practice are equally covered
-   d) The focus is on historical context
-
-**Short Answer Questions:**
-
-3. Explain the main idea presented in the first paragraph.
-
-4. What are the key takeaways from this content?
-
-5. How would you apply these concepts in a real-world scenario?
-
-**True/False:**
-
-6. The content provides detailed explanations of the topic. (T/F)
-
-7. Multiple perspectives are presented throughout the text. (T/F)
-
-**Essay Question:**
-
-8. Discuss the significance of the concepts presented and their potential impact.
-
----
-*Questions generated based on content analysis*`;
+    const writer = await self.ai.writer.create({
+      sharedContext: `Generate 5 practice questions with answers based on this content: ${text}`,
+      monitor(m) {
+        m.addEventListener('downloadprogress', (e) => {
+          if (onProgress) {
+            onProgress({
+              status: 'info',
+              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
+            });
+          }
+        });
+      }
+    });
 
     if (onProgress) {
-      onProgress({ status: "success", message: "✅ Questions generated!" });
+      onProgress({ status: 'info', message: 'Generating questions...' });
     }
+
+    const questions = await writer.write('Create 5 practice questions with answers based on the provided content.');
+
+    writer.destroy();
 
     return questions;
-
   } catch (error) {
-    console.error('❌ Question generation error:', error);
-    if (onProgress) {
-      onProgress({ status: "error", message: error.message });
-    }
-    throw error;
+    console.error('Writer error:', error);
+    throw new Error(`Question generation failed: ${error.message}`);
   }
 };
 
+// ============================================
+// 4. REWRITER API
+// ============================================
 export const rewriteText = async (text, options = {}, onProgress = null) => {
   try {
-    if (onProgress) {
-      onProgress({ status: "info", message: "Analyzing text complexity..." });
+    if (!('ai' in self) || !('rewriter' in self.ai)) {
+      throw new Error('Rewriter API not available in this browser');
     }
 
-    await simulateDelay(900);
-
-    if (onProgress) {
-      onProgress({ status: "info", message: "Simplifying language..." });
+    const availability = await self.ai.rewriter.availability();
+    if (availability === 'unavailable') {
+      throw new Error('Rewriter is not available on this device');
     }
 
-    await simulateDelay(1100);
+    if (onProgress) {
+      onProgress({ status: 'info', message: 'Initializing rewriter...' });
+    }
 
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim());
-    
-    let simplified = `**Simplified Version**\n\n`;
-    
-    sentences.slice(0, Math.min(5, sentences.length)).forEach((sentence, idx) => {
-      let simple = sentence
-        .replace(/\b(furthermore|moreover|consequently|nevertheless)\b/gi, 'Also')
-        .replace(/\b(utilize|utilization)\b/gi, 'use')
-        .replace(/\b(demonstrate|demonstrates)\b/gi, 'show')
-        .replace(/\b(implement|implementation)\b/gi, 'do')
-        .trim();
-      
-      simplified += `${simple}.\n\n`;
+    const rewriter = await self.ai.rewriter.create({
+      tone: options.tone || 'more-formal', // 'more-formal', 'more-casual', 'as-is'
+      length: options.length || 'as-is', // 'shorter', 'longer', 'as-is'
+      sharedContext: options.context || '',
+      monitor(m) {
+        m.addEventListener('downloadprogress', (e) => {
+          if (onProgress) {
+            onProgress({
+              status: 'info',
+              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
+            });
+          }
+        });
+      }
     });
-    
-    simplified += `**Changes Made:**\n• Simplified complex vocabulary\n• Shortened sentence structure\n• Made content more accessible`;
 
     if (onProgress) {
-      onProgress({ status: "success", message: "✅ Text simplified!" });
+      onProgress({ status: 'info', message: 'Rewriting text...' });
     }
 
-    return simplified;
+    const rewritten = await rewriter.rewrite(text, {
+      context: options.context || ''
+    });
 
+    rewriter.destroy();
+
+    return rewritten;
   } catch (error) {
-    console.error('❌ Simplification error:', error);
-    if (onProgress) {
-      onProgress({ status: "error", message: error.message });
-    }
-    throw error;
+    console.error('Rewriter error:', error);
+    throw new Error(`Rewriting failed: ${error.message}`);
   }
 };
 
+// ============================================
+// 5. PROOFREADER API
+// ============================================
 export const proofreadText = async (text, options = {}, onProgress = null) => {
   try {
-    if (onProgress) {
-      onProgress({ status: "info", message: "Scanning for errors..." });
+    if (!('ai' in self) || !('proofreader' in self.ai)) {
+      throw new Error('Proofreader API not available in this browser');
     }
 
-    await simulateDelay(1000);
-
-    if (onProgress) {
-      onProgress({ status: "info", message: "Checking grammar and spelling..." });
-    }
-
-    await simulateDelay(1300);
-
-    const issues = [];
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim());
-
-    if (text.match(/\b(alot|cant|wont|dont)\b/i)) {
-      issues.push("⚠️ Found spacing issues in contractions");
-    }
-    
-    if (text.match(/\b(their|there|they're)\b.*\b(their|there|they're)\b/i)) {
-      issues.push("⚠️ Check usage of 'their/there/they're'");
-    }
-    
-    if (sentences.some(s => s.trim().length > 300)) {
-      issues.push("⚠️ Some sentences are very long - consider breaking them up");
-    }
-
-    const wordCount = text.split(/\s+/).length;
-    const sentenceCount = sentences.length;
-    const avgWordsPerSentence = (wordCount / sentenceCount).toFixed(1);
-
-    let result = `**Proofreading Results**\n\n`;
-    
-    if (issues.length === 0) {
-      result += `✅ **No major issues found!**\n\n`;
-      result += `Your text appears to be well-written with proper grammar and spelling.\n\n`;
-    } else {
-      result += `**Issues Found:** ${issues.length}\n\n`;
-      issues.forEach(issue => {
-        result += `${issue}\n`;
-      });
-      result += `\n`;
-    }
-    
-    result += `**Statistics:**\n`;
-    result += `• Total Words: ${wordCount}\n`;
-    result += `• Total Sentences: ${sentenceCount}\n`;
-    result += `• Average Words per Sentence: ${avgWordsPerSentence}\n\n`;
-    
-    result += `**Readability:** `;
-    if (avgWordsPerSentence < 15) {
-      result += `Easy to read ✓`;
-    } else if (avgWordsPerSentence < 25) {
-      result += `Moderate complexity`;
-    } else {
-      result += `Complex - consider simplifying`;
+    const availability = await self.ai.proofreader.availability();
+    if (availability === 'unavailable') {
+      throw new Error('Proofreader is not available on this device');
     }
 
     if (onProgress) {
-      onProgress({ status: "success", message: "✅ Proofreading complete!" });
+      onProgress({ status: 'info', message: 'Initializing proofreader...' });
     }
+
+    const proofreader = await self.ai.proofreader.create({
+      sharedContext: options.context || '',
+      monitor(m) {
+        m.addEventListener('downloadprogress', (e) => {
+          if (onProgress) {
+            onProgress({
+              status: 'info',
+              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
+            });
+          }
+        });
+      }
+    });
+
+    if (onProgress) {
+      onProgress({ status: 'info', message: 'Proofreading text...' });
+    }
+
+    const result = await proofreader.proofread(text);
+
+    proofreader.destroy();
 
     return result;
-
   } catch (error) {
-    console.error('❌ Proofreading error:', error);
-    if (onProgress) {
-      onProgress({ status: "error", message: error.message });
-    }
-    throw error;
+    console.error('Proofreader error:', error);
+    throw new Error(`Proofreading failed: ${error.message}`);
   }
 };
 
-export const translateText = async (text, targetLanguage = 'es', sourceLanguage = 'en', onProgress = null) => {
+// ============================================
+// 6. TRANSLATOR API
+// ============================================
+export const translateText = async (text, targetLanguage, options = {}, onProgress = null) => {
   try {
-    if (onProgress) {
-      onProgress({ status: "info", message: `Translating to ${targetLanguage}...` });
+    if (!('ai' in self) || !('translator' in self.ai)) {
+      throw new Error('Translator API not available in this browser');
     }
 
-    await simulateDelay(1200);
+    const availability = await self.ai.translator.availability({
+      sourceLanguage: options.sourceLanguage || 'en',
+      targetLanguage: targetLanguage
+    });
 
-    const languageNames = {
-      'es': 'Spanish',
-      'fr': 'French',
-      'de': 'German',
-      'it': 'Italian',
-      'pt': 'Portuguese',
-      'ja': 'Japanese',
-      'zh': 'Chinese',
-      'ko': 'Korean',
-      'ar': 'Arabic',
-      'hi': 'Hindi'
-    };
-
-    const targetLangName = languageNames[targetLanguage] || targetLanguage;
-    
-    const result = `**Translation to ${targetLangName}**\n\n[Translated content will appear here when using real AI]\n\n**Original Text:**\n${text.substring(0, 200)}${text.length > 200 ? '...' : ''}`;
-
-    if (onProgress) {
-      onProgress({ status: "success", message: "✅ Translation complete!" });
+    if (availability === 'unavailable') {
+      throw new Error(`Translation to ${targetLanguage} is unavailable`);
     }
 
-    return result;
+    if (onProgress) {
+      onProgress({ status: 'info', message: 'Initializing translator...' });
+    }
 
+    const translator = await self.ai.translator.create({
+      sourceLanguage: options.sourceLanguage || 'en',
+      targetLanguage: targetLanguage,
+      monitor(m) {
+        m.addEventListener('downloadprogress', (e) => {
+          if (onProgress) {
+            onProgress({
+              status: 'info',
+              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
+            });
+          }
+        });
+      }
+    });
+
+    if (onProgress) {
+      onProgress({ status: 'info', message: 'Translating text...' });
+    }
+
+    const translated = await translator.translate(text);
+
+    translator.destroy();
+
+    return translated;
   } catch (error) {
-    console.error('❌ Translation error:', error);
-    if (onProgress) {
-      onProgress({ status: "error", message: error.message });
-    }
-    throw error;
+    console.error('Translator error:', error);
+    throw new Error(`Translation failed: ${error.message}`);
   }
 };
 
-export default {
-  checkAIAvailability,
-  summarizeText,
-  generateQuestions,
-  rewriteText,
-  proofreadText,
-  translateText
+// ============================================
+// 7. LANGUAGE DETECTOR API
+// ============================================
+export const detectLanguage = async (text) => {
+  try {
+    if (!('ai' in self) || !('languageDetector' in self.ai)) {
+      throw new Error('Language Detector API not available in this browser');
+    }
+
+    const availability = await self.ai.languageDetector.availability();
+    if (availability === 'unavailable') {
+      throw new Error('Language Detector is not available on this device');
+    }
+
+    const languageDetector = await self.ai.languageDetector.create();
+    const results = await languageDetector.detect(text);
+    
+    languageDetector.destroy();
+
+    // Return most likely language with confidence
+    return results[0] || { detectedLanguage: 'unknown', confidence: 0 };
+  } catch (error) {
+    console.error('Language detection error:', error);
+    throw new Error(`Language detection failed: ${error.message}`);
+  }
 };
