@@ -1,267 +1,199 @@
+export const getModelParams = async () => {
+  try {
+    const params = await LanguageModel.params();
+    console.log('Model params:', params);
+    return params;
+  } catch (error) {
+    console.error('Error getting model params:', error);
+    throw error;
+  }
+};
+
 export const checkAIAvailability = async () => {
   console.log('🔍 Checking Chrome Built-in AI System');
-  
-  const availability = {};
-  
   try {
-    if ('LanguageModel' in self) {
-      availability.languageModel = await self.LanguageModel.availability();
-      console.log('✅ LanguageModel available:', availability.languageModel);
-    } else {
-      availability.languageModel = 'unavailable';
-    }
-    
-    console.log('✅ Final AI Availability:', availability);
-    return availability;
-    
+    const available = await LanguageModel.availability();
+    console.log('✅ AI Availability:', available);
+    return available;
   } catch (error) {
     console.error('❌ Error checking AI availability:', error);
-    return { error: error.message };
+    return 'unavailable';
   }
 };
-export const summarizeText = async (text, options = {}, onProgress = null) => {
+
+export const createSession = async (options = {}, onProgress = null) => {
   try {
-    if (!('LanguageModel' in self)) {
-      throw new Error('LanguageModel API not available in this browser');
+    const available = await LanguageModel.availability(); 
+    if (available === 'unavailable') {
+      throw new Error('LanguageModel is not available on this device');
     }
-    
-    const availability = await self.LanguageModel.availability();
-    if (availability === 'unavailable') {
-      throw new Error('LanguageModel is not available');
+    const params = await LanguageModel.params();
+    const config = {
+      temperature: options.temperature || params.defaultTemperature,
+      topK: options.topK || params.defaultTopK,
+    };
+    if (config.temperature && config.topK) {
+      config.temperature = Math.min(config.temperature, params.maxTemperature);
+      config.topK = Math.min(config.topK, params.maxTopK);
     }
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Initializing model...' });
-    }
-    
-    const session = await self.LanguageModel.create({
+    const session = await LanguageModel.create({
+      ...config,
       monitor(m) {
         m.addEventListener('downloadprogress', (e) => {
+          const percent = Math.round(e.loaded * 100);
+          console.log(`Downloaded ${percent}%`);
           if (onProgress) {
-            onProgress({
-              status: 'info',
-              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
-            });
+            onProgress({ status: 'downloading', percent });
           }
         });
-      }
+      },
     });
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Generating summary...' });
-    }
-    
-    const prompt = `Summarize the following text concisely:\n\n${text}`;
-    
-    const summary = await session.prompt(prompt);
-    session.destroy();
-    
-    return summary;
-    
+    return session;
   } catch (error) {
-    console.error('Summarizer error:', error);
-    throw new Error(`Summarization failed: ${error.message}`);
+    console.error('Error creating session:', error);
+    throw error;
   }
 };
-export const generateQuestions = async (text, options = {}, onProgress = null) => {
+
+export const summarizeText = async (text, onProgress = null) => {
+  let session = null;
   try {
-    if (!('LanguageModel' in self)) {
-      throw new Error('LanguageModel API not available in this browser');
-    }
-    
-    const availability = await self.LanguageModel.availability();
-    if (availability === 'unavailable') {
+    const available = await LanguageModel.availability();
+    if (available === 'unavailable') {
       throw new Error('LanguageModel is not available');
     }
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Initializing model...' });
+    if (onProgress) onProgress({ status: 'info', message: 'Creating session...' });
+    session = await createSession({}, onProgress);
+    if (onProgress) onProgress({ status: 'info', message: 'Summarizing...' });
+    const result = await session.prompt(`Summarize the following text:\n\n${text}`);
+    return result;
+  } catch (error) {
+    console.error('Summarization error:', error);
+    throw error;
+  } finally {
+    if (session) session.destroy();
+  }
+};
+
+export const generateQuestions = async (text, onProgress = null) => {
+  let session = null;
+  try {
+    const available = await LanguageModel.availability();
+    if (available === 'unavailable') {
+      throw new Error('LanguageModel is not available');
     }
-    
-    const session = await self.LanguageModel.create({
-      monitor(m) {
-        m.addEventListener('downloadprogress', (e) => {
-          if (onProgress) {
-            onProgress({
-              status: 'info',
-              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
-            });
-          }
-        });
-      }
-    });
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Generating questions...' });
-    }
-    
-    const prompt = `Generate 5 practice questions with answers based on this content:\n\n${text}\n\nFormat each as "Q: ... A: ..."`;
-    
-    const questions = await session.prompt(prompt);
-    session.destroy();
-    
-    return questions;
-    
+    if (onProgress) onProgress({ status: 'info', message: 'Creating session...' });
+    session = await createSession({}, onProgress);
+    if (onProgress) onProgress({ status: 'info', message: 'Generating questions...' });
+    const prompt = `Generate 5 practice questions with answers based on:\n\n${text}\n\nFormat: Q1: ... A1: ...`;
+    const result = await session.prompt(prompt);
+    return result;
   } catch (error) {
     console.error('Question generation error:', error);
-    throw new Error(`Question generation failed: ${error.message}`);
+    throw error;
+  } finally {
+    if (session) session.destroy();
   }
 };
-export const rewriteText = async (text, options = {}, onProgress = null) => {
+
+export const rewriteText = async (text, tone = 'formal', onProgress = null) => {
+  let session = null;
   try {
-    if (!('LanguageModel' in self)) {
-      throw new Error('LanguageModel API not available in this browser');
-    }
-    
-    const availability = await self.LanguageModel.availability();
-    if (availability === 'unavailable') {
+    const available = await LanguageModel.availability();
+    if (available === 'unavailable') {
       throw new Error('LanguageModel is not available');
     }
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Initializing model...' });
-    }
-    
-    const session = await self.LanguageModel.create({
-      monitor(m) {
-        m.addEventListener('downloadprogress', (e) => {
-          if (onProgress) {
-            onProgress({
-              status: 'info',
-              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
-            });
-          }
-        });
-      }
-    });
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Rewriting text...' });
-    }
-    
-    const tone = options.tone || 'formal';
-    const prompt = `Rewrite the following text with a ${tone} tone:\n\n${text}`;
-    
-    const rewritten = await session.prompt(prompt);
-    session.destroy();
-    
-    return rewritten;
-    
-  } catch (error) {
-    console.error('Rewriter error:', error);
-    throw new Error(`Rewriting failed: ${error.message}`);
-  }
-};
-export const proofreadText = async (text, options = {}, onProgress = null) => {
-  try {
-    if (!('LanguageModel' in self)) {
-      throw new Error('LanguageModel API not available in this browser');
-    }
-    
-    const availability = await self.LanguageModel.availability();
-    if (availability === 'unavailable') {
-      throw new Error('LanguageModel is not available');
-    }
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Initializing model...' });
-    }
-    
-    const session = await self.LanguageModel.create({
-      monitor(m) {
-        m.addEventListener('downloadprogress', (e) => {
-          if (onProgress) {
-            onProgress({
-              status: 'info',
-              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
-            });
-          }
-        });
-      }
-    });
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Proofreading text...' });
-    }
-    
-    const prompt = `Proofread and suggest corrections for grammar, spelling issues in this text:\n\n${text}`;
-    
-    const result = await session.prompt(prompt);
-    session.destroy();
-    
+    if (onProgress) onProgress({ status: 'info', message: 'Creating session...' });
+    session = await createSession({}, onProgress);
+    if (onProgress) onProgress({ status: 'info', message: 'Rewriting...' });
+    const result = await session.prompt(`Rewrite this text with a ${tone} tone:\n\n${text}`);
     return result;
-    
   } catch (error) {
-    console.error('Proofreader error:', error);
-    throw new Error(`Proofreading failed: ${error.message}`);
+    console.error('Rewriting error:', error);
+    throw error;
+  } finally {
+    if (session) session.destroy();
   }
 };
-export const translateText = async (text, targetLanguage, options = {}, onProgress = null) => {
+
+export const proofreadText = async (text, onProgress = null) => {
+  let session = null;
   try {
-    if (!('LanguageModel' in self)) {
-      throw new Error('LanguageModel API not available in this browser');
-    }
-    
-    const availability = await self.LanguageModel.availability();
-    if (availability === 'unavailable') {
+    const available = await LanguageModel.availability();
+    if (available === 'unavailable') {
       throw new Error('LanguageModel is not available');
     }
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Initializing translator...' });
+    if (onProgress) onProgress({ status: 'info', message: 'Creating session...' });
+    session = await createSession({}, onProgress);
+    if (onProgress) onProgress({ status: 'info', message: 'Proofreading...' });
+    const result = await session.prompt(`Proofread and correct grammar/spelling in:\n\n${text}`);
+    return result;
+  } catch (error) {
+    console.error('Proofreading error:', error);
+    throw error;
+  } finally {
+    if (session) session.destroy();
+  }
+};
+export const createAbortableSession = async (options = {}) => {
+  const controller = new AbortController();
+  try {
+    const session = await LanguageModel.create({
+      signal: controller.signal,
+      ...options,
+    });
+    return { session, controller };
+  } catch (error) {
+    console.error('Error creating abortable session:', error);
+    throw error;
+  }
+};
+
+export const createContextualSession = async (systemPrompt = null, onProgress = null) => {
+  try {
+    const initialPrompts = [];
+    if (systemPrompt) {
+      initialPrompts.push({
+        role: 'system',
+        content: systemPrompt,
+      });
     }
-    
-    const session = await self.LanguageModel.create({
+    const session = await LanguageModel.create({
+      initialPrompts,
       monitor(m) {
         m.addEventListener('downloadprogress', (e) => {
           if (onProgress) {
-            onProgress({
-              status: 'info',
-              message: `Downloading model... ${Math.round(e.loaded * 100)}%`
-            });
+            onProgress({ status: 'downloading', percent: Math.round(e.loaded * 100) });
           }
         });
-      }
+      },
     });
-    
-    if (onProgress) {
-      onProgress({ status: 'info', message: 'Translating text...' });
-    }
-    
-    const prompt = `Translate the following text to ${targetLanguage}:\n\n${text}`;
-    
-    const translated = await session.prompt(prompt);
-    session.destroy();
-    
-    return translated;
-    
+    return session;
   } catch (error) {
-    console.error('Translation error:', error);
-    throw new Error(`Translation failed: ${error.message}`);
+    console.error('Error creating contextual session:', error);
+    throw error;
   }
 };
-export const detectLanguage = async (text) => {
+
+export const promptStreaming = async (text, onChunk = null, onProgress = null) => {
+  let session = null;
   try {
-    if (!('LanguageModel' in self)) {
-      throw new Error('LanguageModel API not available in this browser');
-    }
-    
-    const availability = await self.LanguageModel.availability();
-    if (availability === 'unavailable') {
+    const available = await LanguageModel.availability();
+    if (available === 'unavailable') {
       throw new Error('LanguageModel is not available');
     }
-    
-    const session = await self.LanguageModel.create();
-    
-    const prompt = `Detect the language of this text and respond ONLY with the language code (e.g., 'en', 'es', 'fr'):\n\n${text}`;
-    
-    const result = await session.prompt(prompt);
-    session.destroy();
-    
-    return { detectedLanguage: result.trim(), confidence: 1.0 };
-    
+    session = await createSession({}, onProgress);
+    const stream = session.promptStreaming(text);
+    let fullResult = '';
+    for await (const chunk of stream) {
+      fullResult += chunk;
+      if (onChunk) onChunk(chunk);
+    }
+    return fullResult;
   } catch (error) {
-    console.error('Language detection error:', error);
-    throw new Error(`Language detection failed: ${error.message}`);
+    console.error('Streaming error:', error);
+    throw error;
+  } finally {
+    if (session) session.destroy();
   }
 };
