@@ -14,9 +14,13 @@ function Upload() {
   const [selectedTool, setSelectedTool] = useState('summarize')
   const [progress, setProgress] = useState({ status: 'idle', message: '' })
 
-  const checkAvailability = () => {
-    const available = checkAIAvailability()
-    setAiAvailable(available)
+  const checkAvailability = async () => {
+    try {
+      const available = await checkAIAvailability()
+      setAiAvailable({ languageModel: available })
+    } catch (err) {
+      console.error('Availability check error:', err)
+    }
   }
 
   const handleFileChange = (e) => {
@@ -55,13 +59,13 @@ function Upload() {
 
     try {
       let contentToProcess = text
+
       if (file) {
         setProgress({ status: 'reading', message: 'Reading file...' })
 
         if (file.type.startsWith('text/') || file.name.endsWith('.txt')) {
           contentToProcess = await file.text()
-        } 
-        else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
           try {
             contentToProcess = await extractPDFText(file)
           } catch (err) {
@@ -69,18 +73,15 @@ function Upload() {
             setLoading(false)
             return
           }
-        }
-        else if (file.type.startsWith('image/')) {
+        } else if (file.type.startsWith('image/')) {
           setError('Image processing coming soon! For now, please use text or PDF files.')
           setLoading(false)
           return
-        } 
-        else if (file.type.startsWith('audio/')) {
+        } else if (file.type.startsWith('audio/')) {
           setError('Audio processing coming soon! For now, please use text or PDF files.')
           setLoading(false)
           return
-        } 
-        else {
+        } else {
           setError('File type not supported. Please use .txt or .pdf files.')
           setLoading(false)
           return
@@ -92,67 +93,57 @@ function Upload() {
         setLoading(false)
         return
       }
-
       let processedResult = null
-      const onProgress = (progressInfo) => {
-        setProgress(progressInfo)
+
+      try {
+        if (selectedTool === 'summarize') {
+          setProgress({ status: 'processing', message: 'Summarizing text...' })
+          processedResult = await summarizeText(contentToProcess)
+        } else if (selectedTool === 'simplify') {
+          setProgress({ status: 'processing', message: 'Rewriting text...' })
+          processedResult = await rewriteText(contentToProcess, 'casual')
+        } else if (selectedTool === 'proofread') {
+          setProgress({ status: 'processing', message: 'Proofreading text...' })
+          processedResult = await proofreadText(contentToProcess)
+        } else if (selectedTool === 'questions') {
+          setProgress({ status: 'processing', message: 'Generating questions...' })
+          processedResult = await generateQuestions(contentToProcess)
+        }
+        await saveContent({
+          title: file ? file.name : 'Direct text input',
+          type: selectedTool,
+          result: processedResult,
+          originalText: contentToProcess,
+          fileType: file ? file.type : 'text/plain',
+          timestamp: Date.now()
+        })
+        setResult({
+          original: contentToProcess,
+          processed: processedResult,
+          tool: selectedTool
+        })
+
+        setSuccess('Content processed and saved successfully!')
+        setFile(null)
+        setText('')
+      } catch (aiErr) {
+        console.error('AI Processing error:', aiErr)
+        setError(aiErr.message || 'AI processing failed. Please try again.')
       }
-      if (selectedTool === 'summarize') {
-        processedResult = await summarizeText(
-          contentToProcess, 
-          { type: 'tl;dr', format: 'plain-text', length: 'medium' },
-          onProgress
-        )
-      } 
-      else if (selectedTool === 'simplify') {
-        processedResult = await rewriteText(
-          contentToProcess, 
-          { tone: 'more-casual', length: 'as-is' },
-          onProgress
-        )
-      } 
-      else if (selectedTool === 'proofread') {
-        processedResult = await proofreadText(contentToProcess, onProgress)
-      } 
-      else if (selectedTool === 'questions') {
-        processedResult = await generateQuestions(contentToProcess, 5, onProgress)
-      }
-
-      await saveContent({
-        title: file ? file.name : 'Direct text input',
-        type: selectedTool,  
-        result: processedResult,  
-        originalText: contentToProcess,  
-        fileType: file ? file.type : 'text/plain',
-        timestamp: Date.now()
-      })
-
-      setResult({
-        original: contentToProcess,
-        processed: processedResult,
-        tool: selectedTool
-      })
-
-      setSuccess('Content processed and saved successfully!')
-      setFile(null)
-      setText('')
-
     } catch (err) {
-      console.error('Processing error:', err)
+      console.error('Upload error:', err)
       setError(err.message || 'Something went wrong. Please try again.')
     } finally {
       setLoading(false)
       setProgress({ status: 'idle', message: '' })
     }
   }
-
   const copyToClipboard = () => {
     if (result?.processed) {
       navigator.clipboard.writeText(result.processed)
       alert('Copied to clipboard!')
     }
   }
-
   const downloadResult = () => {
     if (result?.processed) {
       const blob = new Blob([result.processed], { type: 'text/plain' })
@@ -164,7 +155,6 @@ function Upload() {
       URL.revokeObjectURL(url)
     }
   }
-
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto">
@@ -189,7 +179,6 @@ function Upload() {
             </div>
           )}
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow p-6">
@@ -257,7 +246,7 @@ function Upload() {
                 <label className="block text-gray-700 font-bold mb-3">Select AI Tool:</label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {[
-                    { id: 'summarize', label: 'Summarize', icon: '📝' },
+                    { id: 'summarize', label: 'Summarize', icon: '📋' },
                     { id: 'simplify', label: 'Simplify', icon: '✨' },
                     { id: 'proofread', label: 'Proofread', icon: '✅' },
                     { id: 'questions', label: 'Generate Q&A', icon: '❓' }
@@ -287,11 +276,9 @@ function Upload() {
               </button>
             </div>
           </div>
-
           <div>
             <div className="bg-white rounded-lg shadow p-6 sticky top-6">
               <h2 className="text-xl font-bold text-gray-800 mb-4">Results</h2>
-
               {!result ? (
                 <div className="text-center py-8">
                   <p className="text-gray-500 mb-2">No results yet</p>
@@ -311,7 +298,6 @@ function Upload() {
                       {result.processed}
                     </p>
                   </div>
-
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={copyToClipboard}

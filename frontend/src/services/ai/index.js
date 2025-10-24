@@ -11,6 +11,7 @@ export const getModelParams = async () => {
 
 export const checkAIAvailability = async () => {
   console.log('🔍 Checking Chrome Built-in AI System');
+  
   try {
     const available = await LanguageModel.availability();
     console.log('✅ AI Availability:', available);
@@ -21,30 +22,20 @@ export const checkAIAvailability = async () => {
   }
 };
 
-export const createSession = async (options = {}, onProgress = null) => {
+const createSession = async (options = {}) => {
   try {
-    const available = await LanguageModel.availability(); 
+    const available = await LanguageModel.availability();
     if (available === 'unavailable') {
       throw new Error('LanguageModel is not available on this device');
     }
     const params = await LanguageModel.params();
-    const config = {
+    const session = await LanguageModel.create({
       temperature: options.temperature || params.defaultTemperature,
       topK: options.topK || params.defaultTopK,
-    };
-    if (config.temperature && config.topK) {
-      config.temperature = Math.min(config.temperature, params.maxTemperature);
-      config.topK = Math.min(config.topK, params.maxTopK);
-    }
-    const session = await LanguageModel.create({
-      ...config,
       monitor(m) {
         m.addEventListener('downloadprogress', (e) => {
           const percent = Math.round(e.loaded * 100);
           console.log(`Downloaded ${percent}%`);
-          if (onProgress) {
-            onProgress({ status: 'downloading', percent });
-          }
         });
       },
     });
@@ -55,37 +46,40 @@ export const createSession = async (options = {}, onProgress = null) => {
   }
 };
 
-export const summarizeText = async (text, onProgress = null) => {
+export const summarizeText = async (text) => {
   let session = null;
   try {
     const available = await LanguageModel.availability();
     if (available === 'unavailable') {
       throw new Error('LanguageModel is not available');
     }
-    if (onProgress) onProgress({ status: 'info', message: 'Creating session...' });
-    session = await createSession({}, onProgress);
-    if (onProgress) onProgress({ status: 'info', message: 'Summarizing...' });
-    const result = await session.prompt(`Summarize the following text:\n\n${text}`);
+    console.log('Creating session for summarization...');
+    session = await createSession({});
+    console.log('Summarizing text...');
+    const result = await session.prompt(`Summarize the following text concisely:\n\n${text}`);
     return result;
   } catch (error) {
     console.error('Summarization error:', error);
     throw error;
   } finally {
-    if (session) session.destroy();
+    if (session) {
+      session.destroy();
+      console.log('Session destroyed');
+    }
   }
 };
 
-export const generateQuestions = async (text, onProgress = null) => {
+export const generateQuestions = async (text) => {
   let session = null;
   try {
     const available = await LanguageModel.availability();
     if (available === 'unavailable') {
       throw new Error('LanguageModel is not available');
     }
-    if (onProgress) onProgress({ status: 'info', message: 'Creating session...' });
-    session = await createSession({}, onProgress);
-    if (onProgress) onProgress({ status: 'info', message: 'Generating questions...' });
-    const prompt = `Generate 5 practice questions with answers based on:\n\n${text}\n\nFormat: Q1: ... A1: ...`;
+    console.log('Creating session for question generation...');
+    session = await createSession({});
+    console.log('Generating questions...');
+    const prompt = `Generate 5 practice questions with answers based on:\n\n${text}`;
     const result = await session.prompt(prompt);
     return result;
   } catch (error) {
@@ -96,16 +90,16 @@ export const generateQuestions = async (text, onProgress = null) => {
   }
 };
 
-export const rewriteText = async (text, tone = 'formal', onProgress = null) => {
+export const rewriteText = async (text, tone = 'formal') => {
   let session = null;
   try {
     const available = await LanguageModel.availability();
     if (available === 'unavailable') {
       throw new Error('LanguageModel is not available');
     }
-    if (onProgress) onProgress({ status: 'info', message: 'Creating session...' });
-    session = await createSession({}, onProgress);
-    if (onProgress) onProgress({ status: 'info', message: 'Rewriting...' });
+    console.log('Creating session for rewriting...');
+    session = await createSession({});
+    console.log('Rewriting text...');
     const result = await session.prompt(`Rewrite this text with a ${tone} tone:\n\n${text}`);
     return result;
   } catch (error) {
@@ -116,82 +110,22 @@ export const rewriteText = async (text, tone = 'formal', onProgress = null) => {
   }
 };
 
-export const proofreadText = async (text, onProgress = null) => {
+export const proofreadText = async (text) => {
   let session = null;
   try {
     const available = await LanguageModel.availability();
     if (available === 'unavailable') {
       throw new Error('LanguageModel is not available');
     }
-    if (onProgress) onProgress({ status: 'info', message: 'Creating session...' });
-    session = await createSession({}, onProgress);
-    if (onProgress) onProgress({ status: 'info', message: 'Proofreading...' });
-    const result = await session.prompt(`Proofread and correct grammar/spelling in:\n\n${text}`);
+    console.log('Creating session for proofreading...');
+    session = await createSession({});
+    console.log('Proofreading text...');
+    const result = await session.prompt(
+      `Proofread this text and suggest corrections for grammar and spelling:\n\n${text}`
+    );
     return result;
   } catch (error) {
     console.error('Proofreading error:', error);
-    throw error;
-  } finally {
-    if (session) session.destroy();
-  }
-};
-export const createAbortableSession = async (options = {}) => {
-  const controller = new AbortController();
-  try {
-    const session = await LanguageModel.create({
-      signal: controller.signal,
-      ...options,
-    });
-    return { session, controller };
-  } catch (error) {
-    console.error('Error creating abortable session:', error);
-    throw error;
-  }
-};
-
-export const createContextualSession = async (systemPrompt = null, onProgress = null) => {
-  try {
-    const initialPrompts = [];
-    if (systemPrompt) {
-      initialPrompts.push({
-        role: 'system',
-        content: systemPrompt,
-      });
-    }
-    const session = await LanguageModel.create({
-      initialPrompts,
-      monitor(m) {
-        m.addEventListener('downloadprogress', (e) => {
-          if (onProgress) {
-            onProgress({ status: 'downloading', percent: Math.round(e.loaded * 100) });
-          }
-        });
-      },
-    });
-    return session;
-  } catch (error) {
-    console.error('Error creating contextual session:', error);
-    throw error;
-  }
-};
-
-export const promptStreaming = async (text, onChunk = null, onProgress = null) => {
-  let session = null;
-  try {
-    const available = await LanguageModel.availability();
-    if (available === 'unavailable') {
-      throw new Error('LanguageModel is not available');
-    }
-    session = await createSession({}, onProgress);
-    const stream = session.promptStreaming(text);
-    let fullResult = '';
-    for await (const chunk of stream) {
-      fullResult += chunk;
-      if (onChunk) onChunk(chunk);
-    }
-    return fullResult;
-  } catch (error) {
-    console.error('Streaming error:', error);
     throw error;
   } finally {
     if (session) session.destroy();
