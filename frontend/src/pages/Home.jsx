@@ -17,8 +17,8 @@ function Home() {
       <div className="bg-white shadow p-6 rounded-md w-full max-w-lg mb-8">
         <ul className="list-disc list-inside mb-4 text-gray-600 space-y-2">
           <li>Turn any content into study material. Upload text, images, or audio and let AI help you learn better. Works offline, keeps your data private.</li>
-          <li>Upload text, images, PDFs, or audio files</li>
-          <li>Summarize, translate, generate questions</li>
+          <li>Upload textfiles, copy paste texts, or PDFs</li>
+          <li>Summarize, translate, simplify and generate QnAs</li>
           <li>Everything runs on your device, no servers needed</li>
         </ul>
         <button
