@@ -37,7 +37,7 @@ It offers tools like **summarization**, **Q&A generation**, **rewriting**, and *
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/edumate.git
+git clone https://github.com/Ayanokouji-sama/EDUMATE.git
 cd edumate/frontend
 ```
 
